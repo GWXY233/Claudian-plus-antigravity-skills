@@ -1,3 +1,18 @@
+## Antigravity Skill 下拉菜单分支
+
+本分支基于 Claudian Plus 3.0.3，为 Antigravity 添加技能下拉菜单。
+在 Antigravity 聊天输入框输入 `/`，按技能名或描述筛选，用鼠标或方向键
+选择，按 Enter / Tab 插入 `/技能名`，再补充任务并发送。
+技能内容由官方 `agy` CLI 原生加载。
+
+在 BRAT 中添加 `GWXY233/Claudian-plus-antigravity-skills`，选择 `3.0.4`
+或最新版本。详见[安装和使用说明](docs/antigravity-skills.md)。
+本分支保留 `claudian-plus` 插件 ID，会替换现有 Plus 安装。
+BRAT 中只订阅一个 Plus 仓库，避免两个来源互相覆盖。
+
+[下载发布版本](https://github.com/GWXY233/Claudian-plus-antigravity-skills/releases)
+· [上游项目](https://github.com/wuyifan-code/Claudian-plus)
+
 <p align="right">
   <b>简体中文</b> | <a href="README.md">English</a>
 </p>

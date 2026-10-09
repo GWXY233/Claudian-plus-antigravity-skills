@@ -3,6 +3,8 @@ import type {
   ProviderWorkspaceRegistration,
   ProviderWorkspaceServices,
 } from '../../../core/providers/types';
+import type { VaultFileAdapter } from '../../../core/storage/VaultFileAdapter';
+import { AntigravitySkillCatalog } from '../commands/AntigravitySkillCatalog';
 import { AntigravityCliResolver } from '../runtime/AntigravityCliResolver';
 import { ANTIGRAVITY_PROVIDER_ID } from '../runtime/AntigravityLaunchSpec';
 import { antigravitySettingsTabRenderer } from '../ui/AntigravitySettingsTab';
@@ -10,23 +12,21 @@ import { antigravitySettingsTabRenderer } from '../ui/AntigravitySettingsTab';
 export type AntigravityWorkspaceServices = ProviderWorkspaceServices;
 
 /**
- * Antigravity exposes exactly two workspace services. Everything else the
- * shared registry can carry is deliberately absent rather than stubbed:
- * no command catalog or runtime command loader (the provider advertises no
- * slash commands), no agent mention provider, no MCP server manager, no model
- * catalog refresh (there is no verified discovery), and no tab warmup policy —
- * warming a tab would launch `agy`, whose process startup costs seconds and
- * may consume account usage before the user ever sends a turn.
+ * Skill discovery only reads vault files. Runtime command loading and tab
+ * warmup remain absent so opening a tab does not launch `agy`.
  */
-export async function createAntigravityWorkspaceServices(): Promise<AntigravityWorkspaceServices> {
+export async function createAntigravityWorkspaceServices(
+  vaultAdapter: VaultFileAdapter,
+): Promise<AntigravityWorkspaceServices> {
   return {
     cliResolver: new AntigravityCliResolver(),
+    commandCatalog: new AntigravitySkillCatalog(vaultAdapter),
     settingsTabRenderer: antigravitySettingsTabRenderer,
   };
 }
 
 export const antigravityWorkspaceRegistration: ProviderWorkspaceRegistration<AntigravityWorkspaceServices> = {
-  initialize: async () => createAntigravityWorkspaceServices(),
+  initialize: async ({ vaultAdapter }) => createAntigravityWorkspaceServices(vaultAdapter),
 };
 
 export function maybeGetAntigravityWorkspaceServices(): AntigravityWorkspaceServices | null {

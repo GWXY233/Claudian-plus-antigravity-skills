@@ -1,11 +1,13 @@
 import * as childProcess from 'node:child_process';
 
 import { ProviderWorkspaceRegistry } from '@/core/providers/ProviderWorkspaceRegistry';
+import type { VaultFileAdapter } from '@/core/storage/VaultFileAdapter';
 import {
   antigravityWorkspaceRegistration,
   createAntigravityWorkspaceServices,
   maybeGetAntigravityWorkspaceServices,
 } from '@/providers/antigravity/app/AntigravityWorkspaceServices';
+import { AntigravitySkillCatalog } from '@/providers/antigravity/commands/AntigravitySkillCatalog';
 import { AntigravityCliResolver } from '@/providers/antigravity/runtime/AntigravityCliResolver';
 import { antigravitySettingsTabRenderer } from '@/providers/antigravity/ui/AntigravitySettingsTab';
 
@@ -28,28 +30,29 @@ const spawnSpies = [
 ] as unknown as jest.Mock[];
 
 describe('AntigravityWorkspaceServices', () => {
+  const vaultAdapter = {} as VaultFileAdapter;
   afterEach(() => {
     ProviderWorkspaceRegistry.clear();
     jest.clearAllMocks();
   });
 
-  it('initializes exactly the CLI resolver and the settings tab renderer', async () => {
-    const services = await createAntigravityWorkspaceServices();
+  it('initializes the CLI resolver, skill catalog, and settings tab renderer', async () => {
+    const services = await createAntigravityWorkspaceServices(vaultAdapter);
 
     expect(services.cliResolver).toBeInstanceOf(AntigravityCliResolver);
     expect(services.settingsTabRenderer).toBe(antigravitySettingsTabRenderer);
-    expect(Object.keys(services).sort()).toEqual(['cliResolver', 'settingsTabRenderer']);
+    expect(services.commandCatalog).toBeInstanceOf(AntigravitySkillCatalog);
+    expect(Object.keys(services).sort()).toEqual(['cliResolver', 'commandCatalog', 'settingsTabRenderer']);
   });
 
   it('omits the workspace services the provider cannot honestly serve', async () => {
-    const services = await createAntigravityWorkspaceServices();
+    const services = await createAntigravityWorkspaceServices(vaultAdapter);
 
-    // Commands, agent mentions, MCP, model discovery, and a tab warmup policy
+    // Runtime commands, agent mentions, MCP, model discovery, and tab warmup
     // are all unsupported: each would either expose a feature the provider has
     // no capability for, or launch `agy` without a user turn.
     for (const unsupported of [
       'agentMentionProvider',
-      'commandCatalog',
       'mcpServerManager',
       'prepareSettings',
       'refreshAgentMentions',
@@ -61,12 +64,12 @@ describe('AntigravityWorkspaceServices', () => {
     }
   });
 
-  it('reports no capability-backed entry point through the workspace registry', async () => {
-    ProviderWorkspaceRegistry.setServices('antigravity', await createAntigravityWorkspaceServices());
+  it('reports the skill catalog through the workspace registry', async () => {
+    ProviderWorkspaceRegistry.setServices('antigravity', await createAntigravityWorkspaceServices(vaultAdapter));
 
     expect(ProviderWorkspaceRegistry.getCliResolver('antigravity')).toBeInstanceOf(AntigravityCliResolver);
     expect(ProviderWorkspaceRegistry.getSettingsTabRenderer('antigravity')).toBe(antigravitySettingsTabRenderer);
-    expect(ProviderWorkspaceRegistry.getCommandCatalog('antigravity')).toBeNull();
+    expect(ProviderWorkspaceRegistry.getCommandCatalog('antigravity')).toBeInstanceOf(AntigravitySkillCatalog);
     expect(ProviderWorkspaceRegistry.getAgentMentionProvider('antigravity')).toBeNull();
     expect(ProviderWorkspaceRegistry.getRuntimeCommandLoader('antigravity')).toBeNull();
     expect(ProviderWorkspaceRegistry.getMcpServerManager('antigravity')).toBeNull();
@@ -77,21 +80,21 @@ describe('AntigravityWorkspaceServices', () => {
   it('returns null until the workspace services are initialized', async () => {
     expect(maybeGetAntigravityWorkspaceServices()).toBeNull();
 
-    const services = await createAntigravityWorkspaceServices();
+    const services = await createAntigravityWorkspaceServices(vaultAdapter);
     ProviderWorkspaceRegistry.setServices('antigravity', services);
 
     expect(maybeGetAntigravityWorkspaceServices()).toBe(services);
   });
 
   it('registers a workspace entry point that builds the same services', async () => {
-    const services = await antigravityWorkspaceRegistration.initialize({} as never);
+    const services = await antigravityWorkspaceRegistration.initialize({ vaultAdapter } as never);
 
     expect(services.cliResolver).toBeInstanceOf(AntigravityCliResolver);
     expect(services.settingsTabRenderer).toBe(antigravitySettingsTabRenderer);
   });
 
   it('never launches the CLI while initializing its services', async () => {
-    await createAntigravityWorkspaceServices();
+    await createAntigravityWorkspaceServices(vaultAdapter);
 
     for (const spawnSpy of spawnSpies) {
       expect(spawnSpy).not.toHaveBeenCalled();

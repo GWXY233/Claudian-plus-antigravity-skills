@@ -1,3 +1,18 @@
+## Antigravity Skill Dropdown Fork
+
+This community fork adds a native Antigravity skill picker to Claudian Plus 3.0.3.
+In an Antigravity chat, type `/`, filter by skill name or description, and select
+with the mouse, arrow keys, Enter, or Tab. The picker inserts `/skill-name`; the
+official `agy` CLI loads the skill instructions.
+
+Install with BRAT using `GWXY233/Claudian-plus-antigravity-skills` and release
+`3.0.4` or latest. See [installation and usage](docs/antigravity-skills.md).
+This fork keeps the `claudian-plus` plugin ID, so it replaces the existing Plus
+installation. Track only one Plus repository in BRAT to avoid conflicting updates.
+
+[Download releases](https://github.com/GWXY233/Claudian-plus-antigravity-skills/releases)
+· [Upstream project](https://github.com/wuyifan-code/Claudian-plus)
+
 <p align="right">
   <a href="README_ZH.md">简体中文</a> | <b>English</b>
 </p>
